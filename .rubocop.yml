@@ -23,3 +23,6 @@ Style/AccessorMethodName:
 
 Rails/FindBy:
   Enabled: false
+
+Style/BracesAroundHashParameters:
+  Enabled: false
