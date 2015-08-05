@@ -91,13 +91,17 @@ class TemplateInput < ActiveRecord::Base
 
   class UserInputResolver < InputResolver
     def ready?
-      # TODO based on job invocation
-      false
+      @renderer.invocation.input_values.find { |value| value.template_input_name == 'domain' }
     end
 
     def resolved_value
-      # TODO based on job invocation
-      raise StandardError
+      input_value.value
+    end
+
+    private
+
+    def input_value
+      @renderer.invocation.input_values.find { |value| value.template_input_name == @input.name }
     end
   end
 
