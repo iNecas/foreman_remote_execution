@@ -9,7 +9,7 @@ describe Targeting do
     bookmark.query = "name = bar"
   end
 
-  context 'Able to be created with search term' do
+  context 'able to be created with search term' do
     before { targeting.search_query = "name = foo" }
     it { assert targeting.save }
   end
@@ -51,6 +51,47 @@ describe Targeting do
     it { assert targeting.reload.user.nil? }
     it do
       -> { targeting.resolve_hosts! }.must_raise(Foreman::Exception)
+    end
+  end
+
+  describe '#build_query_from_hosts(ids)' do
+    let(:second_host) { FactoryGirl.create(:host) }
+
+    before do
+      host
+      second_host
+    end
+
+    context 'for two hosts' do
+      let(:query) { targeting.build_query_from_hosts([ host.id, second_host.id ]) }
+
+      it 'builds query using host names joining with or' do
+        query.must_include "name = #{host.name}"
+        query.must_include "name = #{second_host.name}"
+        query.must_include ' or '
+
+        Host.search_for(query).must_include host
+        Host.search_for(query).must_include second_host
+      end
+    end
+
+    context 'for one host' do
+      let(:query) { targeting.build_query_from_hosts([ host.id ]) }
+
+      it 'builds query using host name' do
+        query.must_equal "name = #{host.name}"
+        Host.search_for(query).must_include host
+        Host.search_for(query).wont_include second_host
+      end
+    end
+
+    context 'for no id' do
+      let(:query) { targeting.build_query_from_hosts([]) }
+
+      it 'builds query to find all hosts' do
+        Host.search_for(query).must_include host
+        Host.search_for(query).must_include second_host
+      end
     end
   end
 end
