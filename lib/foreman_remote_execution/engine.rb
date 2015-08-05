@@ -107,6 +107,7 @@ module ForemanRemoteExecution
       (Template.descendants + [Template]).each { |klass| klass.send(:include, ForemanRemoteExecution::TemplateExtensions) }
 
       User.send(:include, ForemanRemoteExecution::UserExtensions)
+      Host.send(:include, ForemanRemoteExecution::HostExtensions)
       Bookmark.send(:include, ForemanRemoteExecution::BookmarkExtensions)
       HostsHelper.send(:include, ForemanRemoteExecution::HostsHelperExtensions)
     end
