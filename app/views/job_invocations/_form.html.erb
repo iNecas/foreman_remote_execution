@@ -54,5 +54,14 @@
   <% end %>
 
 
+  <div class="form-group execution_type">
+    <legend><%= _('Schedule Job') %></legend>
+    <%= radio_button_f f, :execution_type, :value => 'now', :text => _("Run Job Now"), :class => 'execution_type_selector' %>
+    <%= radio_button_f f, :execution_type, :value => 'future', :text => _("Schedule Future Job"), :class => 'execution_type_selector' %>
+    <fieldset id="execution_type_future" class="execution_type_form <%= 'hidden' if @composer.job_invocation.execution_type != :future %>">
+      <%= text_f f, :start_at, :label => _('Start at') %>
+    </fieldset>
+  </div>
+
   <%= submit_or_cancel f %>
 <% end %>

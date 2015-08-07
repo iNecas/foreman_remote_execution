@@ -11,7 +11,13 @@ class JobInvocationsController < ApplicationController
   def create
     @composer = JobInvocationComposer.new(JobInvocation.new, params)
     if @composer.save
-      @task = ForemanTasks.async_task(::Actions::RemoteExecution::JobRun, @composer.job_invocation)
+      job_invocation = @composer.job_invocation
+      if job_invocation.execution_type == :future
+        t = ForemanTasks.dynflow.world.schedule(::Actions::RemoteExecution::JobRun, {start_at: job_invocation.start_at_parsed}, job_invocation)
+        @task = ForemanTasks::Task.find_by_external_id(t.id)
+      else
+        @task = ForemanTasks.async_task(::Actions::RemoteExecution::JobRun, job_invocation)
+      end
       redirect_to foreman_tasks_task_path(@task)
     else
       render :action => 'new'
