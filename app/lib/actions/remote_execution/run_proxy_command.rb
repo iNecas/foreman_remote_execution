@@ -21,9 +21,9 @@ module Actions
 
       def on_data(data)
         if data[:result] == 'initialization_error'
-          handle_connection_exception(data[:exception_class]
+          handle_connection_exception(data[:metadata][:exception_class]
                                        .constantize
-                                       .new(data[:exception_message]))
+                                       .new(data[:metadata][:exception_message]))
         else
           super(data)
           error! _("Script execution failed") if failed_run?
@@ -50,11 +50,12 @@ module Actions
       end
 
       def handle_connection_exception(exception, event = nil)
-        output[:failed_proxy_task_ids] ||= []
+        output[:metadata] ||= {}
+        output[:metadata][:failed_proxy_tasks] ||= []
         options = input[:connection_options]
-        if options[:retry_count] - output[:failed_proxy_task_ids].count > 0
-          output[:failed_proxy_task_ids] << output[:proxy_task_id]
-          output[:proxy_task_id] = nil
+        output[:metadata][:failed_proxy_tasks] << format_exception(exception)
+        output[:proxy_task_id] = nil
+        if output[:metadata][:failed_proxy_tasks].count < options[:retry_count]
           suspend do |suspended_action|
             @world.clock.ping suspended_action,
                               Time.now + options[:retry_interval],
@@ -65,10 +66,20 @@ module Actions
         end
       end
 
-      def with_connection_error_handling(event = nil, &block)
-        block.call() if block_given?
+      def format_exception(exception)
+        { output[:proxy_task_id] =>
+          { :exception_class => exception.class.name,
+            :execption_message => exception.message } }
+      end
+
+      def with_connection_error_handling(event = nil)
+        yield
       rescue ::RestClient::Exception, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
-        handle_connection_exception(e, event)
+        if event.class == CallbackData
+          raise e
+        else
+          handle_connection_exception(e, event)
+        end
       end
     end
   end
