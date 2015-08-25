@@ -30,12 +30,40 @@ module Actions
         end
       end
 
+      def trigger_proxy_task
+        suspend do |suspended_action|
+          output[:metadata] ||= {}
+          unless metadata[:timeout]
+            time = Time.now + input[:connection_options][:timeout]
+            @world.clock.ping suspended_action,
+                              time,
+                              Timeout.new
+            metadata[:timeout] = time.to_s
+          end
+          super
+        end
+      end
+
+      def check_task_status
+        if output[:proxy_task_id]
+          response = proxy.task_status(output[:proxy_task_id])
+          if response['result'] == 'error'
+            raise ::Foreman::Exception.new("The smart proxy task '#{output[:proxy_task_id]}' failed.")
+          else
+            action = response['actions'].select { |action| action['class'] == proxy_action_name }.first
+            on_data(action['output'])
+          end
+        else
+          raise ::Foreman::Exception.new("Task wasn't triggered on the smart proxy in time.")
+        end
+      end
+
       def rescue_strategy
         ::Dynflow::Action::Rescue::Skip
       end
 
       def failed_run?
-        event.data[:result] == 'initialization_error' ||
+        output[:result] == 'initialization_error' ||
           (exit_status && proxy_output[:exit_status] != 0)
       end
 
@@ -43,19 +71,29 @@ module Actions
         proxy_output && proxy_output[:exit_status]
       end
 
+      def metadata
+        output[:metadata]
+      end
+
+      def metadata=(thing)
+        output[:metadata] = thing
+      end
+
       private
 
       def default_connection_options
-        { :connection_options => { :retry_interval => 15, :retry_count => 4 } }
+        # Fails if the plan is not finished within 60 seconds from the first task trigger attempt on the smart proxy
+        # If the triggering fails, it retries 3 more times with 15 second delays
+        { :connection_options => { :retry_interval => 15, :retry_count => 4, :timeout => 60 } }
       end
 
       def handle_connection_exception(exception, event = nil)
         output[:metadata] ||= {}
-        output[:metadata][:failed_proxy_tasks] ||= []
+        metadata[:failed_proxy_tasks] ||= []
         options = input[:connection_options]
-        output[:metadata][:failed_proxy_tasks] << format_exception(exception)
+        metadata[:failed_proxy_tasks] << format_exception(exception)
         output[:proxy_task_id] = nil
-        if output[:metadata][:failed_proxy_tasks].count < options[:retry_count]
+        if metadata[:failed_proxy_tasks].count < options[:retry_count]
           suspend do |suspended_action|
             @world.clock.ping suspended_action,
                               Time.now + options[:retry_interval],
@@ -75,7 +113,7 @@ module Actions
       def with_connection_error_handling(event = nil)
         yield
       rescue ::RestClient::Exception, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
-        if event.class == CallbackData
+        if event.class == CallbackData || event.class == Timeout
           raise e
         else
           handle_connection_exception(e, event)
