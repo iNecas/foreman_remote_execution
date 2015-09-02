@@ -47,14 +47,18 @@ module Actions
       def check_task_status
         if output[:proxy_task_id]
           response = proxy.task_status(output[:proxy_task_id])
-          if response['result'] == 'error'
-            raise ::Foreman::Exception.new("The smart proxy task '#{output[:proxy_task_id]}' failed.")
+          if response['state'] == 'stopped'
+            if response['result'] == 'error'
+              raise ::Foreman::Exception.new _("The smart proxy task '#{output[:proxy_task_id]}' failed.")
+            else
+              action = response['actions'].select { |action| action['class'] == proxy_action_name }.first
+              on_data(action['output'])
+            end
           else
-            action = response['actions'].select { |action| action['class'] == proxy_action_name }.first
-            on_data(action['output'])
+           cancel_proxy_task
           end
         else
-          raise ::Foreman::Exception.new("Task wasn't triggered on the smart proxy in time.")
+          raise ::Foreman::Exception.new _("Task wasn't triggered on the smart proxy in time.")
         end
       end
 
