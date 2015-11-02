@@ -21,10 +21,26 @@ module Actions
         job_invocation = JobInvocation.find(input[:job_invocation_id])
         load_balancer = ProxyLoadBalancer.new
 
-        job_invocation.targeting.hosts.map do |host|
-          template_invocation = job_invocation.template_invocation_for_host(host)
-          proxy = determine_proxy(template_invocation, host, load_balancer)
-          trigger(RunHostJob, job_invocation, host, template_invocation, proxy, input[:connection_options])
+        # TODO: fix multi-templates case
+        template_invocation = job_invocation.template_invocations.first
+
+        case template_invocation.template.provider_type.to_s
+          when 'Ssh'
+            job_invocation.targeting.hosts.map do |host|
+              template_invocation = job_invocation.template_invocation_for_host(host)
+              proxy = determine_proxy(template_invocation, host, load_balancer)
+              trigger(RunHostJob, job_invocation, host, template_invocation, proxy, input[:connection_options])
+            end
+          when 'Ansible'
+            proxy = determine_proxy(template_invocation, job_invocation.targeting.hosts.first, load_balancer)
+
+            sub_tasks = job_invocation.targeting.hosts.map do |host|
+              trigger(AnsibleHostJob, job_invocation, host, template_invocation)
+            end
+            sub_tasks << trigger(RunAnsibleJob, job_invocation, template_invocation, proxy, input[:connection_options])
+            sub_tasks
+          else
+            raise "Unsupported provider #{template_invocation.template.provider_type.to_s}"
         end
       end
 

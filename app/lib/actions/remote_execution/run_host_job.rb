@@ -27,7 +27,7 @@ module Actions
         link!(job_invocation)
         link!(template_invocation)
 
-        plan_action(RunProxyCommand, proxy, hostname, script, { :connection_options => connection_options })
+        plan_action(RunProxySshCommand, proxy, hostname, script, { :connection_options => connection_options })
       end
 
       def humanized_output

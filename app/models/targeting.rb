@@ -26,7 +26,11 @@ class Targeting < ActiveRecord::Base
     self.search_query = bookmark.query if dynamic? && bookmark.present?
     self.touch(:resolved_at)
     self.save!
-    self.hosts = User.as(user.login) { Host.authorized('edit_hosts', Host).search_for(search_query) }
+    self.hosts = targeting_scope
+  end
+
+  def targeting_scope
+    User.as(user.login) { Host.authorized('edit_hosts', Host).search_for(search_query) }
   end
 
   def dynamic?

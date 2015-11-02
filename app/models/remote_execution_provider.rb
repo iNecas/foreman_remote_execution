@@ -4,7 +4,7 @@ class RemoteExecutionProvider
   end
 
   def self.providers
-    @providers ||= { :Ssh => N_(SSHExecutionProvider) }.with_indifferent_access
+    @providers ||= { :Ssh => N_(SSHExecutionProvider), :Ansible => N_(AnsibleExecutionProvider)}.with_indifferent_access
   end
 
   def self.register(key, klass)
