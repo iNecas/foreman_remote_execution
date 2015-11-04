@@ -23,6 +23,12 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :ansible_proxies, :only => [] do
+    member do
+      post 'import_inventory'
+    end
+  end
+
   resources :template_invocations, :only => [:show]
 
   namespace :api, :defaults => {:format => 'json'} do

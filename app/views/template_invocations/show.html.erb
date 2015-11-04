@@ -1,10 +1,10 @@
-<% title _('Detail of %s run') % @template_invocation.job_invocation.job_name %>
+<% title _('Detail of %s run') % @template_invocation_task.main_action.input[:job_name] %>
 <% stylesheet 'template_invocation' %>
 <% javascript 'template_invocation' %>
 
 <div id="title_action">
   <div class="btn-toolbar pull-right">
-    <%= link_to(_('Back to Job'), job_invocation_path(@template_invocation.job_invocation)) %>
+    <%= link_to(_('Back to Job'), job_invocation_path(@template_invocation.job_invocation)) if @template_invocation %>
     <%= button_group(link_to_function(_('Toggle command'), '$("div.preview").toggle()'),
                      link_to_function(_('Toggle STDERR'), '$("div.line.stderr").toggle()'),
                      link_to_function(_('Toggle STDOUT'), '$("div.line.stdout").toggle()'),
@@ -12,12 +12,13 @@
     <%= button_group(template_invocation_task_buttons(@template_invocation_task)) %>
   </div>
 </div>
+<% if @host %>
+  <h3><%= _('Target: ') %><%= link_to(@host.name, host_path(@host)) %></h3>
 
-<h3><%= _('Target: ') %><%= link_to(@host.name, host_path(@host)) %></h3>
-
-<div class="preview hidden">
-  <%= preview_box(@template_invocation, @host) %>
-</div>
+  <div class="preview hidden">
+    <%= preview_box(@template_invocation, @host) if @template_invocation %>
+  </div>
+<% end %>
 
 <div class="terminal" data-refresh-url="<%= template_invocation_path(@template_invocation_task) %>">
   <% if @error %>

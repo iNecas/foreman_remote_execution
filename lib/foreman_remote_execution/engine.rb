@@ -96,6 +96,7 @@ module ForemanRemoteExecution
       #   Template.reflect_on_association :template_inputs # => <#Association...
       #   ProvisioningTemplate.reflect_on_association :template_inputs # => nil
       require_dependency 'job_template'
+      ::SmartProxiesHelper.send :include, ForemanRemoteExecution::SmartProxiesHelperExtensions
       (Template.descendants + [Template]).each { |klass| klass.send(:include, ForemanRemoteExecution::TemplateRelations) }
       # similarly, attr_accessible :template_inputs_attributes does not work with STI
       (Template.descendants + [Template]).each { |klass| klass.send(:include, ForemanRemoteExecution::TemplateExtensions) }

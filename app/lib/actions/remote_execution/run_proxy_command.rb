@@ -11,18 +11,12 @@ module Actions
                                        .new(data[:metadata][:exception_message]))
         else
           super(data)
-          error! _("Script execution failed") if failed_run?
         end
       end
 
 
       def rescue_strategy
         ::Dynflow::Action::Rescue::Skip
-      end
-
-      def failed_run?
-        output[:result] == 'initialization_error' ||
-          (exit_status && proxy_output[:exit_status] != 0)
       end
 
       def exit_status
