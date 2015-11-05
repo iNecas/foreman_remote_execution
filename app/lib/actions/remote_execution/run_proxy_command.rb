@@ -58,9 +58,9 @@ module Actions
         end
 
         if exit_status
-          records << format_output(_("Exit status: %s") % exit_status, 'stdout', task.ended_at)
+          records << format_output(_("Exit status: %s") % exit_status, 'stdout', task.ended_at + 1)
         elsif run_step && run_step.error
-          records << format_output(_("Job finished with error") + ": #{run_step.error.exception_class} - #{run_step.error.message}", 'debug', task.ended_at)
+          records << format_output(_("Job finished with error") + ": #{run_step.error.exception_class} - #{run_step.error.message}", 'debug', task.ended_at + 1)
         end
         return records
       end
