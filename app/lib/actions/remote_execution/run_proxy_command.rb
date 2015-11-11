@@ -68,8 +68,9 @@ module Actions
 
       def finalized_output
         records = []
-        if self.output[:proxy_output].present?
-          records.concat(self.output[:proxy_output].fetch(:result, []))
+        proxy_result = self.output.fetch(:proxy_output, {}).fetch(:result, []) || []
+        if proxy_result.present?
+          records.concat(proxy_result)
         else
           records << format_output(_('No output'))
         end
