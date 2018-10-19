@@ -20,7 +20,11 @@ class RemoteExecutionProvider
     end
 
     def proxy_command_options(template_invocation, host)
-      {}
+      {:proxy_feature_name => proxy_feature_name}
+    end
+
+    def proxy_feature_name
+      raise NotImplementedError
     end
 
     def humanized_name
