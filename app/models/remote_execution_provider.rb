@@ -20,10 +20,10 @@ class RemoteExecutionProvider
     end
 
     def proxy_command_options(template_invocation, host)
-      {:proxy_feature_name => proxy_feature_name}
+      {:proxy_operation_name => proxy_operation_name}
     end
 
-    def proxy_feature_name
+    def proxy_operation_name
       raise NotImplementedError
     end
 
