@@ -24,8 +24,8 @@ module ForemanRemoteExecutionCore
         @data.freeze
       end
 
-      def build(options)
-        new(options)
+      def build(suspended_action, options)
+        new(suspended_action, options)
       end
     end
 
